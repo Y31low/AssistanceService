@@ -152,5 +152,4 @@ public class MqttOptions {
         // Create the key pair container
         return new PEMKeyPair(new SubjectPublicKeyInfo(algId, pubSpec), new PrivateKeyInfo(algId, keyStruct));
     }
-
 }

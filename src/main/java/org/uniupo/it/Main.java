@@ -4,7 +4,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.uniupo.it.mqttConfig.MqttOptions;
 import org.uniupo.it.service.AssistanceService;
-import org.uniupo.it.service.DispenserService;
+
 
 import java.util.Properties;
 import java.util.UUID;

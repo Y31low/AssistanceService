@@ -5,33 +5,31 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.uniupo.it.mqttConfig.MqttOptions;
 import org.uniupo.it.service.AssistanceService;
 
-
-import java.util.Properties;
 import java.util.UUID;
 
 public class Main {
     public static void main(String[] args) {
 
-        String mqttUrl = "";
-        String machineId = "";
-
-        Properties properties = new Properties();
-        try {
-            properties.load(Main.class.getClassLoader().getResourceAsStream("config.properties"));
-            mqttUrl = properties.getProperty("mqttUrl");
-            machineId = properties.getProperty("machineId");
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (args.length != 2) {
+            System.out.println("Parametri non validi");
         }
+
+        String instituteId = args[0];
+        String machineId = args[1];
+        String mqttUrl=mqttUrl="ssl://localhost:8883";
 
         try {
             MqttClient mqttClient = new MqttClient(mqttUrl, UUID.randomUUID() + " " + machineId);
             MqttConnectOptions mqttOptions = new MqttOptions().getOptions();
             mqttClient.connect(mqttOptions);
-            AssistanceService assistanceService = new AssistanceService(machineId, mqttClient);
+            AssistanceService assistanceService = new AssistanceService(machineId, instituteId,mqttClient);
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        FaultGenerator faultGenerator = new FaultGenerator(machineId);
+        faultGenerator.setDaemon(true);
+        faultGenerator.start();
 
 
     }

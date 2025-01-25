@@ -13,16 +13,20 @@ import java.util.List;
 public class AssistanceService {
     final private String machineId;
     final private MqttClient mqttClient;
+    final private String instituteId;
     final private String baseTopic;
     final private Gson gson;
 
-    public AssistanceService(String machineId, MqttClient mqttClient) throws MqttException {
+    public AssistanceService(String machineId, String instituteId, MqttClient mqttClient) throws MqttException {
         this.machineId = machineId;
         this.mqttClient = mqttClient;
+        this.instituteId = instituteId;
         this.baseTopic = "macchina/" + machineId + "/assistance";
         this.gson = new Gson();
         this.mqttClient.subscribe(String.format(Topics.ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC,machineId), this::checkMachineStatusHandler);
         this.mqttClient.subscribe(String.format(Topics.DISPENSE_COMPLETED_TOPIC,machineId), this::CheckUpAfterDispenseHandler);
+        this.mqttClient.subscribe(String.format(Topics.HEARTBEAT_TOPIC,instituteId, machineId), this::heartbeatHandler);
+
 
     }
 
@@ -54,6 +58,18 @@ public class AssistanceService {
             mqttClient.publish(
                     String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, machineId),
                     new MqttMessage(jsonMessage.getBytes())
+            );
+        } catch (MqttException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void heartbeatHandler(String topic, MqttMessage message) {
+        System.out.println("Received heartbeat from machine " + machineId);
+        try {
+            mqttClient.publish(
+                    String.format(Topics.HEARTBEAT_RESPONSE_TOPIC, instituteId, machineId),
+                    new MqttMessage("ACK".getBytes())
             );
         } catch (MqttException e) {
             throw new RuntimeException(e);

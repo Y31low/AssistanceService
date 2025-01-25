@@ -1,7 +1,7 @@
 package org.uniupo.it.model;
 
 public enum FaultType {
-    CONSUMABLE_EMPTY,
-    CASH_BOX_FULL,
-    GENERIC_FAULT
+    CONSUMABILE_TERMINATO,
+    CASSA_PIENA,
+    GUASTO_GENERICO
 }

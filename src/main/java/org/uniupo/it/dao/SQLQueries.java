@@ -13,9 +13,6 @@ public final class SQLQueries {
             FROM machine.consumable
             WHERE quantity = 0;""";
 
-        public static final String CHECK_CASH_BOX = """
-            SELECT "totalBalance", "maxBalance"
-            FROM machine."Machine"
-            WHERE "totalBalance" >= "maxBalance" * 0.9;""";
+
     }
 }

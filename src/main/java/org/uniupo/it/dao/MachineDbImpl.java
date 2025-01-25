@@ -19,22 +19,13 @@ public class MachineDbImpl implements MachineDb {
             try (PreparedStatement stmt = conn.prepareStatement(SQLQueries.Machine.CHECK_CONSUMABLES);
                  ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
-                    faults.add(new Fault(
-                            FaultType.CONSUMABLE_EMPTY,
+                   /** faults.add(new Fault(
+                            FaultType.CONSUMABILE_TERMINATO,
                             rs.getString("name") + " is empty"
-                    ));
+                    ));*/
                 }
             }
 
-            try (PreparedStatement stmt = conn.prepareStatement(SQLQueries.Machine.CHECK_CASH_BOX);
-                 ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    faults.add(new Fault(
-                            FaultType.CASH_BOX_FULL,
-                            "Cash box is at " + rs.getDouble("totalBalance") + " of " + rs.getDouble("maxBalance")
-                    ));
-                }
-            }
             return faults;
         } catch (SQLException e) {
             throw new RuntimeException("Error during machine checkup", e);

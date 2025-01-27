@@ -6,6 +6,8 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.uniupo.it.dao.MachineDbImpl;
 import org.uniupo.it.model.Fault;
+import org.uniupo.it.model.FaultMessage;
+import org.uniupo.it.model.FaultType;
 import org.uniupo.it.util.Topics;
 
 import java.util.List;
@@ -23,31 +25,18 @@ public class AssistanceService {
         this.instituteId = instituteId;
         this.baseTopic = "macchina/" + machineId + "/assistance";
         this.gson = new Gson();
-        this.mqttClient.subscribe(String.format(Topics.ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC,machineId), this::checkMachineStatusHandler);
-        this.mqttClient.subscribe(String.format(Topics.DISPENSE_COMPLETED_TOPIC,machineId), this::CheckUpAfterDispenseHandler);
-        this.mqttClient.subscribe(String.format(Topics.HEARTBEAT_TOPIC,instituteId, machineId), this::heartbeatHandler);
-
-
-    }
-
-    private void CheckUpAfterDispenseHandler(String topic, MqttMessage message) {
-        try {
-            MachineDbImpl machineDb = new MachineDbImpl();
-            List<Fault> faults = machineDb.checkUpAfterDispense();
-
-            if (!faults.isEmpty()){
-                String jsonMessage = gson.toJson(faults);
-                System.out.println(jsonMessage);
-                mqttClient.publish(
-                        String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, machineId),
-                        new MqttMessage(jsonMessage.getBytes())
-                );
-            }
-        }catch (MqttException e) {
-            throw new RuntimeException(e);
-        }
+        this.mqttClient.subscribe(String.format(Topics.ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, machineId), this::checkMachineStatusHandler);
+        this.mqttClient.subscribe(String.format(Topics.HEARTBEAT_TOPIC, instituteId, machineId), this::heartbeatHandler);
+        this.mqttClient.subscribe(String.format(Topics.TECHNICIAN_ASSISTANCE_TOPIC, instituteId, machineId), this::technicianAssistanceHandler);
 
     }
+
+    private void technicianAssistanceHandler(String topic, MqttMessage message) {
+        System.out.println("Received technician assistance request");
+        MachineDbImpl machineDb = new MachineDbImpl();
+        machineDb.solveGenericFaults();
+    }
+
 
     private void checkMachineStatusHandler(String topic, MqttMessage mqttMessage) {
         try {
@@ -55,10 +44,7 @@ public class AssistanceService {
             MachineDbImpl machineDb = new MachineDbImpl();
             String jsonMessage = gson.toJson(machineDb.checkMachineStatus(), Boolean.class);
             System.out.println(jsonMessage);
-            mqttClient.publish(
-                    String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, machineId),
-                    new MqttMessage(jsonMessage.getBytes())
-            );
+            mqttClient.publish(String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, machineId), new MqttMessage(jsonMessage.getBytes()));
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }
@@ -67,10 +53,7 @@ public class AssistanceService {
     private void heartbeatHandler(String topic, MqttMessage message) {
         System.out.println("Received heartbeat from machine " + machineId);
         try {
-            mqttClient.publish(
-                    String.format(Topics.HEARTBEAT_RESPONSE_TOPIC, instituteId, machineId),
-                    new MqttMessage("ACK".getBytes())
-            );
+            mqttClient.publish(String.format(Topics.HEARTBEAT_RESPONSE_TOPIC, instituteId, machineId), new MqttMessage("ACK".getBytes()));
         } catch (MqttException e) {
             throw new RuntimeException(e);
         }

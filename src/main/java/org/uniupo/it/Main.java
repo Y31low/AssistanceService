@@ -2,6 +2,7 @@ package org.uniupo.it;
 
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
+import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.uniupo.it.mqttConfig.MqttOptions;
 import org.uniupo.it.service.AssistanceService;
 
@@ -23,13 +24,14 @@ public class Main {
             MqttConnectOptions mqttOptions = new MqttOptions().getOptions();
             mqttClient.connect(mqttOptions);
             AssistanceService assistanceService = new AssistanceService(machineId, instituteId,mqttClient);
+            FaultGenerator faultGenerator = new FaultGenerator(machineId,mqttClient);
+            faultGenerator.setDaemon(true);
+            faultGenerator.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        FaultGenerator faultGenerator = new FaultGenerator(machineId);
-        faultGenerator.setDaemon(true);
-        faultGenerator.start();
+
 
 
     }

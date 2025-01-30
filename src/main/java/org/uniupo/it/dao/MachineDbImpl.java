@@ -4,7 +4,9 @@ import org.uniupo.it.model.Fault;
 import org.uniupo.it.model.FaultType;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class MachineDbImpl implements MachineDb {
 
@@ -57,17 +59,36 @@ public class MachineDbImpl implements MachineDb {
     }
 
     @Override
-    public void solveGenericFaults() {
+    public List<Fault> solveGenericFaults() {
         Connection conn = null;
+        List<Fault> resolvedFaults = new ArrayList<>();
+
         try {
             conn = DatabaseConnection.getInstance().getConnection();
             conn.setAutoCommit(false);
 
-            try (PreparedStatement updateFaultsStmt = conn.prepareStatement(SQLQueries.Machine.UPDATE_GENERIC_FAULTS)) {
-                updateFaultsStmt.setString(1, FaultType.GUASTO_GENERICO.name());
-                int updatedRows = updateFaultsStmt.executeUpdate();
+            try (PreparedStatement getFaultsStmt = conn.prepareStatement(SQLQueries.Machine.GET_GENERIC_FAULTS)) {
+                getFaultsStmt.setObject(1, FaultType.GUASTO_GENERICO.name(), Types.OTHER);
+                ResultSet rs = getFaultsStmt.executeQuery();
 
-                if (updatedRows > 0) {
+                while (rs.next()) {
+
+                    resolvedFaults.add(new Fault(
+                                    rs.getString("description"),
+                                    rs.getObject("id_fault", UUID.class),
+                                    rs.getTimestamp("timestamp"),
+                                    FaultType.valueOf(rs.getString("fault_type")),
+                                    rs.getBoolean("risolto")
+                            )
+                    );
+                }
+            }
+
+            if (!resolvedFaults.isEmpty()) {
+                try (PreparedStatement updateFaultsStmt = conn.prepareStatement(SQLQueries.Machine.UPDATE_GENERIC_FAULTS)) {
+                    updateFaultsStmt.setString(1, FaultType.GUASTO_GENERICO.name());
+                    updateFaultsStmt.executeUpdate();
+
                     try (PreparedStatement updateMachineStmt = conn.prepareStatement(
                             SQLQueries.Machine.UPDATE_MACHINE_STATUS_NO_FAULT)) {
                         updateMachineStmt.executeUpdate();
@@ -76,6 +97,8 @@ public class MachineDbImpl implements MachineDb {
             }
 
             conn.commit();
+            return resolvedFaults;
+
         } catch (SQLException e) {
             if (conn != null) {
                 try {
@@ -84,8 +107,9 @@ public class MachineDbImpl implements MachineDb {
                     throw new RuntimeException("Error rolling back transaction", ex);
                 }
             }
-            System.err.println("Error solving generic faults: " + e.getMessage());
-            throw new RuntimeException("Error solving generic faults", e);
+            System.out.println("Error solving generic faults: " + e.getMessage());
+            throw new RuntimeException("Error solving generic faults", e.getCause());
+
         } finally {
             if (conn != null) {
                 try {

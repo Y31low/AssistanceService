@@ -30,5 +30,8 @@ public final class SQLQueries {
 
         public static final String UPDATE_MACHINE_STATUS_NO_FAULT =
                 "UPDATE machine.\"Machine\" SET \"faultStatus\" = false";
+
+        public static final String GET_GENERIC_FAULTS =
+                "SELECT id_fault, description, timestamp, fault_type,risolto FROM machine.\"Fault\" WHERE fault_type = ?;";
     }
 }

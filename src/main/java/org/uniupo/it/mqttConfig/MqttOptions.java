@@ -35,7 +35,7 @@ public class MqttOptions {
 
     private final MqttConnectOptions options;
 
-    public MqttOptions(){
+    public MqttOptions() {
         options = new MqttConnectOptions();
         try {
             setUpOptions(options);
@@ -44,32 +44,7 @@ public class MqttOptions {
         }
     }
 
-    private void setUpOptions(MqttConnectOptions options) throws Exception {
-        String caFilePath = "src/main/resources/certificates/ca.crt";
-        String clientCertFilePath = "src/main/resources/certificates/client.crt";
-        String clientKeyFilePath = "src/main/resources/certificates/client.key";
-
-        File caFile = new File(caFilePath);
-        if (caFile.exists()) {
-            System.out.println("CA certificate file found");
-        } else {
-            System.out.println("CA certificate file not found");
-        }
-        options.setCleanSession(true);
-        options.setAutomaticReconnect(true);
-        options.setConnectionTimeout(60);
-        options.setKeepAliveInterval(60);
-        options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
-        SSLSocketFactory socketFactory=getSocketFactory(caFilePath, clientCertFilePath, clientKeyFilePath, "");
-        options.setSocketFactory(socketFactory);
-    }
-    public MqttConnectOptions getOptions(){
-        return options;
-    }
-
-    private static SSLSocketFactory getSocketFactory(final String caCrtFile,
-                                                     final String crtFile, final String keyFile, final String password)
-            throws Exception {
+    private static SSLSocketFactory getSocketFactory(final String caCrtFile, final String crtFile, final String keyFile, final String password) throws Exception {
         Security.addProvider(new BouncyCastleProvider());
 
         // load CA certificate
@@ -95,18 +70,15 @@ public class MqttOptions {
         // load client private key
         PEMParser pemParser = new PEMParser(new FileReader(keyFile));
         Object object = pemParser.readObject();
-        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder()
-                .build(password.toCharArray());
-        JcaPEMKeyConverter converter = new JcaPEMKeyConverter()
-                .setProvider("BC");
+        PEMDecryptorProvider decProv = new JcePEMDecryptorProviderBuilder().build(password.toCharArray());
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
         KeyPair key;
         if (object instanceof PEMEncryptedKeyPair) {
             System.out.println("Encrypted key - we will use provided password");
-            key = converter.getKeyPair(((PEMEncryptedKeyPair) object)
-                    .decryptKeyPair(decProv));
+            key = converter.getKeyPair(((PEMEncryptedKeyPair) object).decryptKeyPair(decProv));
         } else if (object instanceof PrivateKeyInfo) {
             System.out.println("Unencrypted PrivateKeyInfo key - no password needed");
-            key = converter.getKeyPair(convertPrivateKeyFromPKCS8ToPKCS1((PrivateKeyInfo)object));
+            key = converter.getKeyPair(convertPrivateKeyFromPKCS8ToPKCS1((PrivateKeyInfo) object));
         } else {
             System.out.println("Unencrypted key - no password needed");
             key = converter.getKeyPair((PEMKeyPair) object);
@@ -125,10 +97,8 @@ public class MqttOptions {
         KeyStore ks = KeyStore.getInstance(KeyStore.getDefaultType());
         ks.load(null, null);
         ks.setCertificateEntry("certificate", cert);
-        ks.setKeyEntry("private-key", key.getPrivate(), password.toCharArray(),
-                new java.security.cert.Certificate[] { cert });
-        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory
-                .getDefaultAlgorithm());
+        ks.setKeyEntry("private-key", key.getPrivate(), password.toCharArray(), new java.security.cert.Certificate[]{cert});
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         kmf.init(ks, password.toCharArray());
 
         // finally, create SSL socket factory
@@ -144,12 +114,35 @@ public class MqttOptions {
         // Convert the parsed key to an RSA private key
         RSAPrivateKey keyStruct = RSAPrivateKey.getInstance(asn1PrivateKey);
         // Create the RSA public key from the modulus and exponent
-        RSAPublicKey pubSpec = new RSAPublicKey(
-                keyStruct.getModulus(), keyStruct.getPublicExponent());
+        RSAPublicKey pubSpec = new RSAPublicKey(keyStruct.getModulus(), keyStruct.getPublicExponent());
         // Create an algorithm identifier for forming the key pair
         AlgorithmIdentifier algId = new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE);
         System.out.println("Converted private key from PKCS #8 to PKCS #1 RSA private key\n");
         // Create the key pair container
         return new PEMKeyPair(new SubjectPublicKeyInfo(algId, pubSpec), new PrivateKeyInfo(algId, keyStruct));
+    }
+
+    private void setUpOptions(MqttConnectOptions options) throws Exception {
+        String caFilePath = "src/main/resources/certificates/ca.crt";
+        String clientCertFilePath = "src/main/resources/certificates/client.crt";
+        String clientKeyFilePath = "src/main/resources/certificates/client.key";
+
+        File caFile = new File(caFilePath);
+        if (caFile.exists()) {
+            System.out.println("CA certificate file found");
+        } else {
+            System.out.println("CA certificate file not found");
+        }
+        options.setCleanSession(true);
+        options.setAutomaticReconnect(true);
+        options.setConnectionTimeout(60);
+        options.setKeepAliveInterval(60);
+        options.setMqttVersion(MqttConnectOptions.MQTT_VERSION_3_1_1);
+        SSLSocketFactory socketFactory = getSocketFactory(caFilePath, clientCertFilePath, clientKeyFilePath, "");
+        options.setSocketFactory(socketFactory);
+    }
+
+    public MqttConnectOptions getOptions() {
+        return options;
     }
 }

@@ -17,21 +17,20 @@ public class Main {
 
         String instituteId = args[0];
         String machineId = args[1];
-        String mqttUrl=mqttUrl="ssl://localhost:8883";
+        String mqttUrl = "ssl://localhost:8883";
 
         try {
             MqttClient mqttClient = new MqttClient(mqttUrl, UUID.randomUUID() + " " + machineId);
             MqttConnectOptions mqttOptions = new MqttOptions().getOptions();
             mqttClient.connect(mqttOptions);
-            AssistanceService assistanceService = new AssistanceService(machineId, instituteId,mqttClient);
-            FaultGenerator faultGenerator = new FaultGenerator(machineId,mqttClient);
+            AssistanceService assistanceService=new AssistanceService(machineId, instituteId, mqttClient);
+            assistanceService.technicianAssistanceHandler("",new MqttMessage());
+            FaultGenerator faultGenerator = new FaultGenerator(machineId, mqttClient);
             faultGenerator.setDaemon(true);
             faultGenerator.start();
         } catch (Exception e) {
             e.printStackTrace();
         }
-
-
 
 
     }

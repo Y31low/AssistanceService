@@ -121,4 +121,73 @@ public class MachineDbImpl implements MachineDb {
             }
         }
     }
+
+    @Override
+    public List<Fault> handleConsumableFaults() {
+        Connection conn = null;
+        List<Fault> resolvedFaults = new ArrayList<>();
+
+        try {
+            conn = DatabaseConnection.getInstance().getConnection();
+            conn.setAutoCommit(false);
+
+            // Get consumable faults and refill consumables
+            try (PreparedStatement getFaultsStmt = conn.prepareStatement(SQLQueries.Machine.GET_CONSUMABLE_FAULTS);
+                 PreparedStatement refillStmt = conn.prepareStatement(SQLQueries.Machine.REFILL_CONSUMABLE);
+                 PreparedStatement updateFaultsStmt = conn.prepareStatement(SQLQueries.Machine.UPDATE_CONSUMABLE_FAULTS)) {
+
+                ResultSet rs = getFaultsStmt.executeQuery();
+
+                while (rs.next()) {
+                    resolvedFaults.add(new Fault(
+                            rs.getString("description"),
+                            rs.getObject("id_fault", UUID.class),
+                            rs.getTimestamp("timestamp"),
+                            FaultType.CONSUMABILE_TERMINATO,
+                            false
+                    ));
+
+                    refillStmt.setString(1, rs.getString("name"));
+                    refillStmt.executeUpdate();
+                }
+
+                if (!resolvedFaults.isEmpty()) {
+                    updateFaultsStmt.executeUpdate();
+
+                    try (PreparedStatement checkFaultsStmt = conn.prepareStatement(SQLQueries.Machine.GET_FAULTS)) {
+                        ResultSet remainingFaults = checkFaultsStmt.executeQuery();
+                        if (!remainingFaults.next()) {
+                            try (PreparedStatement updateMachineStmt = conn.prepareStatement(
+                                    SQLQueries.Machine.UPDATE_MACHINE_STATUS_NO_FAULT)) {
+                                updateMachineStmt.executeUpdate();
+                            }
+                        }
+                    }
+                }
+
+                conn.commit();
+                return resolvedFaults;
+
+            }
+        } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    throw new RuntimeException("Error rolling back transaction", ex);
+                }
+            }
+            throw new RuntimeException("Error handling consumable faults", e);
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    System.err.println("Error closing connection: " + e.getMessage());
+                }
+            }
+        }
+    }
+
 }

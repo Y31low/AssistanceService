@@ -33,5 +33,26 @@ public final class SQLQueries {
 
         public static final String GET_GENERIC_FAULTS =
                 "SELECT id_fault, description, timestamp, fault_type,risolto FROM machine.\"Fault\" WHERE fault_type = ?;";
+
+        public static final String GET_CONSUMABLE_FAULTS = """
+                    SELECT f.id_fault, f.description, f.timestamp, f.fault_type, f.risolto, c.name, c."maxQuantity"
+                    FROM machine."Fault" f
+                    JOIN machine.consumable c ON f.description LIKE '%' || c.name::text || '%'
+                    WHERE f.fault_type = 'CONSUMABILE_TERMINATO'::machine.fault_type\s
+                    AND f.risolto = false;
+               \s""";
+
+        public static final String REFILL_CONSUMABLE = """
+                    UPDATE machine.consumable\s
+                    SET quantity = "maxQuantity"
+                    WHERE name = ?::machine."ConsumableType";
+               \s""";
+
+        public static final String UPDATE_CONSUMABLE_FAULTS = """
+                    UPDATE machine."Fault"
+                    SET risolto = true
+                    WHERE fault_type = 'CONSUMABILE_TERMINATO'::machine.fault_type 
+                    AND risolto = false;
+                """;
     }
 }

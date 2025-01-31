@@ -9,6 +9,7 @@ import org.uniupo.it.dao.MachineDbImpl;
 import org.uniupo.it.model.FaultMessage;
 import org.uniupo.it.util.Topics;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AssistanceService {
@@ -32,7 +33,10 @@ public class AssistanceService {
         try {
             System.out.println("Received technician assistance request");
             MachineDbImpl machineDb = new MachineDbImpl();
-            List<FaultMessage> solvedFaults = machineDb.solveGenericFaults()
+
+            List<FaultMessage> solvedFaults = new ArrayList<>();
+
+            solvedFaults.addAll(machineDb.handleConsumableFaults()
                     .stream()
                     .map(fault -> new FaultMessage(
                             machineId,
@@ -42,7 +46,19 @@ public class AssistanceService {
                             fault.getIdFault(),
                             fault.getFaultType()
                     ))
-                    .toList();
+                    .toList());
+
+            solvedFaults.addAll(machineDb.solveGenericFaults()
+                    .stream()
+                    .map(fault -> new FaultMessage(
+                            machineId,
+                            fault.getDescription(),
+                            Integer.parseInt(instituteId),
+                            fault.getTimestamp(),
+                            fault.getIdFault(),
+                            fault.getFaultType()
+                    ))
+                    .toList());
 
             if (!solvedFaults.isEmpty()) {
                 String jsonMessage = gson.toJson(solvedFaults, new TypeToken<List<FaultMessage>>(){}.getType());

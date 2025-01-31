@@ -9,4 +9,6 @@ public interface MachineDb {
     void setMachineStatus(boolean status);
     void insertFaults(List<Fault> faults);
     List<Fault> solveGenericFaults();
+
+    List<Fault> handleConsumableFaults();
 }

@@ -11,6 +11,7 @@ import org.uniupo.it.util.Topics;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class AssistanceService {
     final private String machineId;
@@ -61,8 +62,9 @@ public class AssistanceService {
                     .toList());
 
             if (!solvedFaults.isEmpty()) {
-                String jsonMessage = gson.toJson(solvedFaults, new TypeToken<List<FaultMessage>>(){}.getType());
-                mqttClient.publish(String.format(Topics.SOLVED_GENERIC_FAULT_TOPIC), new MqttMessage(jsonMessage.getBytes()));
+                List<UUID> solvedFaultsIds = solvedFaults.stream().map(FaultMessage::getIdFault).toList();
+                String jsonMessage = gson.toJson(solvedFaultsIds);
+                mqttClient.publish(String.format(Topics.MANAGEMENT_RESOLVE_FAULT_TOPIC), new MqttMessage(jsonMessage.getBytes()));
             }
         } catch (Exception e) {
             System.err.println("Error handling technician assistance: " + e.getMessage());

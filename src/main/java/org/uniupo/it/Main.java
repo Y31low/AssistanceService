@@ -23,8 +23,7 @@ public class Main {
             MqttClient mqttClient = new MqttClient(mqttUrl, UUID.randomUUID() + " " + machineId);
             MqttConnectOptions mqttOptions = new MqttOptions().getOptions();
             mqttClient.connect(mqttOptions);
-            AssistanceService assistanceService=new AssistanceService(machineId, instituteId, mqttClient);
-            assistanceService.technicianAssistanceHandler("",new MqttMessage());
+            new AssistanceService(machineId, instituteId, mqttClient);
             FaultGenerator faultGenerator = new FaultGenerator(machineId, mqttClient);
             faultGenerator.setDaemon(true);
             faultGenerator.start();

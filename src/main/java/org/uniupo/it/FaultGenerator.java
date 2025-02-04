@@ -22,13 +22,15 @@ public class FaultGenerator extends Thread {
     private final List<String> genericFaultDescriptions;
     private volatile boolean running;
     private MqttClient mqttClient;
+    private String instituteId;
     private final Gson gson = new Gson();
 
 
-    public FaultGenerator(String machineId, MqttClient mqttClient) {
+    public FaultGenerator(String machineId,String instituteId, MqttClient mqttClient) {
         this.machineId = machineId;
         this.random = new Random();
         this.running = true;
+        this.instituteId = instituteId;
         this.genericFaultDescriptions = List.of(
                 "Rilevato surriscaldamento del motore",
                 "Malfunzionamento della pompa dell'acqua",
@@ -50,9 +52,12 @@ public class FaultGenerator extends Thread {
             try {
                 if (random.nextDouble() < 0.10) {
                     FaultMessage fault = generateFault();
-                    String faultJson = gson.toJson(fault);
+
                     try {
-                        mqttClient.publish(Topics.GENERIC_FAULT_TOPIC, new MqttMessage(faultJson.getBytes()));
+                        List<FaultMessage> faults = List.of(fault);
+                        MqttMessage message = new MqttMessage(gson.toJson(faults).getBytes());
+                        message.setQos(1);
+                        mqttClient.publish(Topics.GENERIC_FAULT_TOPIC, message);
                     } catch (MqttException e) {
                         throw new RuntimeException(e);
                     }
@@ -68,13 +73,15 @@ public class FaultGenerator extends Thread {
     private FaultMessage generateFault() {
         Timestamp timestamp = new Timestamp(System.currentTimeMillis());
         String description = genericFaultDescriptions.get(random.nextInt(genericFaultDescriptions.size()));
-        Fault fault = new Fault(description, UUID.randomUUID(), timestamp, FaultType.GUASTO_GENERICO);
+        UUID faultId = UUID.randomUUID();
+        Fault fault = new Fault(description, faultId, timestamp, FaultType.GUASTO_GENERICO);
 
         MachineDb machineDb = new MachineDbImpl();
         machineDb.insertFaults(List.of(fault));
+        System.out.println("Fault generated: " + fault);
         machineDb.setMachineStatus(true);
 
-        return new FaultMessage(machineId, description, 111, timestamp, UUID.randomUUID(), FaultType.GUASTO_GENERICO);
+        return new FaultMessage(machineId, description, Integer.parseInt(instituteId), timestamp, faultId, FaultType.GUASTO_GENERICO);
     }
 
     public void stopGenerator() {

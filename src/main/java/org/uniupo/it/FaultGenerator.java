@@ -76,7 +76,7 @@ public class FaultGenerator extends Thread {
         UUID faultId = UUID.randomUUID();
         Fault fault = new Fault(description, faultId, timestamp, FaultType.GUASTO_GENERICO);
 
-        MachineDb machineDb = new MachineDbImpl();
+        MachineDb machineDb = new MachineDbImpl(instituteId,machineId);
         machineDb.insertFaults(List.of(fault));
         System.out.println("Fault generated: " + fault);
         machineDb.setMachineStatus(true);

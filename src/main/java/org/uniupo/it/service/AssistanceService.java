@@ -5,6 +5,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.uniupo.it.FaultGenerator;
+import org.uniupo.it.dao.MachineDb;
 import org.uniupo.it.dao.MachineDbImpl;
 import org.uniupo.it.model.FaultMessage;
 import org.uniupo.it.util.Topics;
@@ -19,12 +20,14 @@ public class AssistanceService {
     final private String instituteId;
     final private FaultGenerator faultGenerator;
     final private Gson gson;
+    final private MachineDb machineDb;
 
     public AssistanceService(String machineId, String instituteId, MqttClient mqttClient, FaultGenerator faultGenerator) throws MqttException {
         this.machineId = machineId;
         this.mqttClient = mqttClient;
         this.instituteId = instituteId;
         this.faultGenerator = faultGenerator;
+        this.machineDb = new MachineDbImpl(instituteId, machineId);
         this.gson = new Gson();
         this.mqttClient.subscribe(String.format(Topics.ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, instituteId, machineId), this::checkMachineStatusHandler);
         this.mqttClient.subscribe(String.format(Topics.HEARTBEAT_TOPIC, instituteId, machineId), this::heartbeatHandler);
@@ -56,7 +59,6 @@ public class AssistanceService {
     public void technicianAssistanceHandler(String topic, MqttMessage message) {
         try {
             System.out.println("Received technician assistance request");
-            MachineDbImpl machineDb = new MachineDbImpl();
 
             List<FaultMessage> solvedFaults = new ArrayList<>();
 
@@ -100,7 +102,7 @@ public class AssistanceService {
     private void checkMachineStatusHandler(String topic, MqttMessage mqttMessage) {
         try {
             System.out.println("Checking machine status");
-            MachineDbImpl machineDb = new MachineDbImpl();
+
             String jsonMessage = gson.toJson(machineDb.checkMachineStatus(), Boolean.class);
             mqttClient.publish(String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, instituteId, machineId), new MqttMessage(jsonMessage.getBytes()));
             System.out.println("Sent machine status response on" + String.format(Topics.RESPONSE_ASSISTANCE_CHECK_MACHINE_STATUS_TOPIC, instituteId, machineId));

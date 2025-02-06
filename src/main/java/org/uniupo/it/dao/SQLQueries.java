@@ -61,6 +61,9 @@ public final class SQLQueries {
                 WHERE fault_type = 'CONSUMABILE_TERMINATO'::%s.fault_type
                 AND risolto = false""";
 
+        private static final String DELETE_MACHINE_SCHEMA_TEMPLATE= """
+                DROP SCHEMA %S CASCADE""";
+
         // Metodi helper per generare le query con lo schema corretto
         public static String getMachineStatus(String instituteId, String machineId) {
             return String.format(GET_MACHINE_STATUS_TEMPLATE, getSchemaName(instituteId, machineId));
@@ -109,5 +112,11 @@ public final class SQLQueries {
             String schema = getSchemaName(instituteId, machineId);
             return String.format(UPDATE_CONSUMABLE_FAULTS_TEMPLATE, schema, schema);
         }
+
+        public static String deleteMachineSchema(String instituteId, String machineId) {
+            return String.format(DELETE_MACHINE_SCHEMA_TEMPLATE, getSchemaName(instituteId, machineId));
+        }
+
+
     }
 }

@@ -39,6 +39,7 @@ public class AssistanceService {
     private void killServiceHandler(String topic, MqttMessage message) {
         System.out.println("Service killed hello darkness my old friend :(");
         faultGenerator.stopGenerator();
+        machineDb.deleteMachineSchema();
         new Thread(() -> {
             try {
                 Thread.sleep(1000);

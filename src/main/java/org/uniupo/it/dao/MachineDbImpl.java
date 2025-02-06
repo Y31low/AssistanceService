@@ -128,6 +128,17 @@ public class MachineDbImpl implements MachineDb {
     }
 
     @Override
+    public void deleteMachineSchema() {
+        try (Connection conn = DatabaseConnection.getInstance().getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(SQLQueries.Machine.deleteMachineSchema(instituteId, machineId))) {
+            pstmt.executeUpdate();
+        } catch (SQLException e) {
+            System.err.println("Error deleting machine schema: " + e.getMessage());
+            throw new RuntimeException("Error deleting machine schema", e);
+        }
+    }
+
+    @Override
     public List<Fault> handleConsumableFaults() {
         Connection conn = null;
         List<Fault> resolvedFaults = new ArrayList<>();

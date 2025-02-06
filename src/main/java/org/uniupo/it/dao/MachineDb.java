@@ -9,6 +9,7 @@ public interface MachineDb {
     void setMachineStatus(boolean status);
     void insertFaults(List<Fault> faults);
     List<Fault> solveGenericFaults();
+    void deleteMachineSchema();
 
     List<Fault> handleConsumableFaults();
 }
